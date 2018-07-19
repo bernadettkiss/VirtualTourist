@@ -52,10 +52,10 @@
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
-                    <navigationItem key="navigationItem" title="Virtual Tourist" id="FDl-3U-ewH">
-                        <barButtonItem key="rightBarButtonItem" systemItem="edit" id="2Cj-yu-Qmb"/>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" title="Virtual Tourist" id="FDl-3U-ewH"/>
                     <connections>
+                        <outlet property="instructionLabel" destination="Idd-2K-ryE" id="SiV-xw-8In"/>
+                        <outlet property="instructionView" destination="hC9-35-yUR" id="8St-Ps-stl"/>
                         <outlet property="mapView" destination="hbR-dT-Xol" id="TvZ-7O-CRV"/>
                     </connections>
                 </viewController>
