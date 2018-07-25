@@ -75,3 +75,5 @@ fastlane/test_output
 .Spotlight-V100
 .Trashes
 ehthumbs.db
+
+*FlickrApiKey.swift
