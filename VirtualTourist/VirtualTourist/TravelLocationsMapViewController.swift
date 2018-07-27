@@ -8,14 +8,17 @@
 
 import UIKit
 import MapKit
+import CoreLocation
 import CoreData
 
-class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
+class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate {
     
+    @IBOutlet weak var centerBarButton: UIBarButtonItem!
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var instructionView: UIView!
     @IBOutlet weak var instructionLabel: UILabel!
     
+    var locationManager = CLLocationManager()
     var dataController: DataController!
     var selectedPin: Pin?
     
@@ -24,16 +27,50 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        navigationItem.rightBarButtonItem = editButtonItem
+        print((UIApplication.shared.delegate as! AppDelegate).appLaunchedBefore!)
+        
+        configureNavigationBar()
+        
+        locationManager.delegate = self
         mapView.delegate = self
         mapView.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:))))
         
         if let pins = retrievePinsFromPersistentStore() {
             createAnnotations(for: pins)
         }
+        
+        if (UIApplication.shared.delegate as! AppDelegate).appLaunchedBefore! {
+            if let region = MapConfig.shared.load() {
+                mapView.setRegion(region, animated: true)
+            }
+        }
+    }
+    
+    // MARK: - Actions
+    
+    @IBAction func centerMapPressed(_ sender: UIBarButtonItem) {
+        guard let centerCoordinate = locationManager.location?.coordinate else { return }
+        let latitudinalMeters = 10000.0
+        let longitudinalMeters = 10000.0
+        let coordinateRegion = MKCoordinateRegionMakeWithDistance(centerCoordinate, latitudinalMeters, longitudinalMeters)
+        mapView.setRegion(coordinateRegion, animated: true)
     }
     
     // MARK: - Methods
+    
+    func configureNavigationBar() {
+        navigationItem.rightBarButtonItem = editButtonItem
+        if CLLocationManager.locationServicesEnabled() {
+            switch CLLocationManager.authorizationStatus() {
+            case .denied, .restricted:
+                centerBarButton.isEnabled = false
+            case .notDetermined:
+                locationManager.requestWhenInUseAuthorization()
+            default:
+                return
+            }
+        }
+    }
     
     override func setEditing(_ editing: Bool, animated: Bool) {
         super.setEditing(editing, animated: animated)
@@ -118,7 +155,18 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
         mapView.addAnnotation(annotation)
     }
     
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == SegueIdentifier.toPhotoAlbum.rawValue {
+            guard let photoAlbumViewController = segue.destination as? PhotoAlbumViewController else { return }
+            photoAlbumViewController.selectedPin = selectedPin!
+        }
+    }
+    
     // MARK: - MKMapViewDelegate Methods
+    
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        MapConfig.shared.update(centerCoordinate: mapView.region.center, span: mapView.region.span)
+    }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         guard let annotation = view.annotation else { return }
@@ -129,15 +177,8 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
                 mapView.removeAnnotation(annotation)
             } else {
                 self.selectedPin = selectedPin
-                performSegue(withIdentifier: "toPhotoAlbum", sender: nil)
+                performSegue(withIdentifier: SegueIdentifier.toPhotoAlbum.rawValue, sender: nil)
             }
-        }
-    }
-    
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "toPhotoAlbum" {
-            guard let photoAlbumViewController = segue.destination as? PhotoAlbumViewController else { return }
-            photoAlbumViewController.selectedPin = selectedPin!
         }
     }
 }

@@ -13,9 +13,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var window: UIWindow?
     
+    public var appLaunchedBefore: Bool?
+    
     let dataController = DataController(modelName: "VirtualTourist")
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+        
+        if UserDefaults.standard.bool(forKey: "appLaunchedBefore") {
+            appLaunchedBefore = true
+        } else {
+            appLaunchedBefore = false
+            UserDefaults.standard.set(true, forKey: "appLaunchedBefore")
+        }
         
         dataController.load()
         
@@ -31,6 +40,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func applicationDidEnterBackground(_ application: UIApplication) {
         saveViewContext()
+        MapConfig.shared.save()
     }
     
     func applicationWillEnterForeground(_ application: UIApplication) {
@@ -41,6 +51,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func applicationWillTerminate(_ application: UIApplication) {
         saveViewContext()
+        MapConfig.shared.save()
     }
     
     // MARK: - Core Data Saving Support

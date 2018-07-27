@@ -18,7 +18,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="hbR-dT-Xol">
+                            <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" rotateEnabled="NO" showsUserLocation="YES" showsBuildings="NO" showsCompass="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hbR-dT-Xol">
                                 <rect key="frame" x="0.0" y="64" width="375" height="603"/>
                                 <gestureRecognizers/>
                             </mapView>
@@ -52,8 +52,15 @@
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
-                    <navigationItem key="navigationItem" title="Virtual Tourist" id="FDl-3U-ewH"/>
+                    <navigationItem key="navigationItem" title="Virtual Tourist" id="FDl-3U-ewH">
+                        <barButtonItem key="leftBarButtonItem" image="icon_pin" id="7Ai-8y-meT">
+                            <connections>
+                                <action selector="centerMapPressed:" destination="BYZ-38-t0r" id="BGb-IC-e2J"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
                     <connections>
+                        <outlet property="centerBarButton" destination="7Ai-8y-meT" id="LTM-1G-gWy"/>
                         <outlet property="instructionLabel" destination="Idd-2K-ryE" id="SiV-xw-8In"/>
                         <outlet property="instructionView" destination="hC9-35-yUR" id="8St-Ps-stl"/>
                         <outlet property="mapView" destination="hbR-dT-Xol" id="TvZ-7O-CRV"/>
@@ -152,7 +159,10 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="6CJ-Nu-Mz1" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1186" y="-565"/>
+            <point key="canvasLocation" x="967" y="-564"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="icon_pin" width="24" height="24"/>
+    </resources>
 </document>
