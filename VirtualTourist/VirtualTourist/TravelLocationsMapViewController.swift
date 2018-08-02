@@ -130,8 +130,31 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
         let pin = Pin(context: dataController.viewContext)
         pin.latitude = String(coordinate.latitude)
         pin.longitude = String(coordinate.longitude)
+        downloadPhotos(forPin: pin)
         try? dataController.viewContext.save()
         return pin
+    }
+    
+    func downloadPhotos(forPin pin: Pin) {
+        guard let latitude = pin.latitude, let longitude = pin.longitude else { return }
+        FlickrClient.shared.getPhotos(latitude: latitude, longitude: longitude, page: 1) { (pages, photos) in
+            if let photos = photos {
+                for index in 0..<photos.count {
+                    let downloadedPhoto = photos[index] as [String: AnyObject]
+                    
+                    guard let id = downloadedPhoto[FlickrClient.ResponseKeys.Id] as? String else { return }
+                    guard let title = downloadedPhoto[FlickrClient.ResponseKeys.Title] as? String else { return }
+                    guard let imageURLString = downloadedPhoto[FlickrClient.ResponseKeys.MediumURL] as? String else { return }
+                    
+                    let photo = Photo(context: self.dataController.viewContext)
+                    photo.id = id
+                    photo.title = title
+                    photo.url = imageURLString
+                    photo.pin = pin
+                }
+            }
+            try? self.dataController.viewContext.save()
+        }
     }
     
     func remove(pin: Pin) {
@@ -159,6 +182,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
         if segue.identifier == SegueIdentifier.toPhotoAlbum.rawValue {
             guard let photoAlbumViewController = segue.destination as? PhotoAlbumViewController else { return }
             photoAlbumViewController.selectedPin = selectedPin!
+            photoAlbumViewController.dataController = dataController
         }
     }
     

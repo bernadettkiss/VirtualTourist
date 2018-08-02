@@ -18,8 +18,10 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         activityIndicator.isHidden = true
     }
     
-    func configureCell(forPhoto photo: UIImage) {
-        imageView.image = photo
-        imageView.contentMode = .scaleAspectFill
+    func configureCell(forPhoto photo: Photo) {
+        if let image = UIImage(data: photo.image!) {
+            imageView.image = image
+            imageView.contentMode = .scaleAspectFill
+        }
     }
 }

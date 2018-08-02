@@ -28,6 +28,8 @@ extension FlickrClient {
         static let Extras = "extras"
         static let Format = "format"
         static let NoJSONCallback = "nojsoncallback"
+        static let PerPage = "per_page"
+        static let Page = "page"
     }
     
     struct ParameterValues {
@@ -37,15 +39,17 @@ extension FlickrClient {
         static let MediumURL = "url_m"
         static let ResponseFormat = "json"
         static let DisableJSONCallback = "1"
+        static let PerPage = "21"
     }
     
     struct ResponseKeys {
         static let Status = "stat"
         static let Photos = "photos"
+        static let Pages = "pages"
         static let Photo = "photo"
+        static let Id = "id"
         static let Title = "title"
         static let MediumURL = "url_m"
-        static let Pages = "pages"
         static let Total = "total"
     }
     

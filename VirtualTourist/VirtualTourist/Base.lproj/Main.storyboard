@@ -80,7 +80,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="O2j-D2-Tor">
-                                <rect key="frame" x="0.0" y="64" width="375" height="603"/>
+                                <rect key="frame" x="0.0" y="64" width="375" height="559"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="dX3-tl-jzA">
                                     <size key="itemSize" width="50" height="50"/>
@@ -119,11 +119,31 @@
                                     </collectionViewCell>
                                 </cells>
                             </collectionView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="G16-CY-Lay">
+                                <rect key="frame" x="0.0" y="623" width="375" height="44"/>
+                                <subviews>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="o3g-0q-CTa">
+                                        <rect key="frame" x="135" y="7" width="104" height="30"/>
+                                        <state key="normal" title="New Collection">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                    </button>
+                                </subviews>
+                                <color key="backgroundColor" white="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="44" id="3GU-zV-R20"/>
+                                    <constraint firstItem="o3g-0q-CTa" firstAttribute="centerX" secondItem="G16-CY-Lay" secondAttribute="centerX" id="P3O-4v-MP1"/>
+                                    <constraint firstItem="o3g-0q-CTa" firstAttribute="centerY" secondItem="G16-CY-Lay" secondAttribute="centerY" id="tS8-pz-LbQ"/>
+                                </constraints>
+                            </view>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
-                            <constraint firstItem="Nw8-qK-Tlg" firstAttribute="bottom" secondItem="O2j-D2-Tor" secondAttribute="bottom" id="Eei-WG-62O"/>
+                            <constraint firstItem="Nw8-qK-Tlg" firstAttribute="bottom" secondItem="G16-CY-Lay" secondAttribute="bottom" id="2Jm-UT-zE5"/>
+                            <constraint firstItem="G16-CY-Lay" firstAttribute="leading" secondItem="Nw8-qK-Tlg" secondAttribute="leading" id="FRD-dq-EYP"/>
                             <constraint firstItem="Nw8-qK-Tlg" firstAttribute="trailing" secondItem="O2j-D2-Tor" secondAttribute="trailing" id="aUO-9G-dE2"/>
+                            <constraint firstItem="G16-CY-Lay" firstAttribute="top" secondItem="O2j-D2-Tor" secondAttribute="bottom" id="bOv-9H-uXb"/>
+                            <constraint firstItem="G16-CY-Lay" firstAttribute="trailing" secondItem="Nw8-qK-Tlg" secondAttribute="trailing" id="cO0-Lr-nnR"/>
                             <constraint firstItem="O2j-D2-Tor" firstAttribute="top" secondItem="Nw8-qK-Tlg" secondAttribute="top" id="vcN-Kl-gE0"/>
                             <constraint firstItem="O2j-D2-Tor" firstAttribute="leading" secondItem="Nw8-qK-Tlg" secondAttribute="leading" id="xl0-19-hJ8"/>
                         </constraints>

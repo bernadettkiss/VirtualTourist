@@ -12,84 +12,36 @@ class FlickrClient {
     
     static let shared = FlickrClient()
     
-    var photos = [UIImage]()
-    
-    func getPhotos(latitude: String, longitude: String, completion: @escaping (_ success: Bool) -> Void) {
-        photos.removeAll()
+    func getPhotos(latitude: String, longitude: String, page: Int, completion: @escaping (_ pages: Int?, _ photoDictionary: [[String: AnyObject]]?) -> Void) {
         if verifyCoordinate(latitudeString: latitude, longitudeString: longitude) {
             
-            let methodParameters = [
+            let urlParameters = [
                 FlickrClient.ParameterKeys.Method: FlickrClient.ParameterValues.SearchMethod,
                 FlickrClient.ParameterKeys.APIKey: FlickrClient.ParameterValues.APIKey,
                 FlickrClient.ParameterKeys.BoundingBox: boundingBoxString(latitude: latitude, longitude: longitude),
                 FlickrClient.ParameterKeys.SafeSearch: FlickrClient.ParameterValues.UseSafeSearch,
                 FlickrClient.ParameterKeys.Extras: FlickrClient.ParameterValues.MediumURL,
                 FlickrClient.ParameterKeys.Format: FlickrClient.ParameterValues.ResponseFormat,
-                FlickrClient.ParameterKeys.NoJSONCallback: FlickrClient.ParameterValues.DisableJSONCallback
+                FlickrClient.ParameterKeys.NoJSONCallback: FlickrClient.ParameterValues.DisableJSONCallback,
+                FlickrClient.ParameterKeys.PerPage: FlickrClient.ParameterValues.PerPage,
+                FlickrClient.ParameterKeys.Page: "\(page)"
             ]
             
-            let session = URLSession.shared
-            let request = URLRequest(url: flickrURL(fromParameters: methodParameters as [String: AnyObject]))
-            
-            let task = session.dataTask(with: request) { (data, response, error) in
+            NetworkManager.shared.GETRequest(urlParameters: urlParameters) { (results, error) in
+                guard error == nil else { return }
                 
-                guard (error == nil) else {
-                    completion(false)
-                    return
-                }
-                
-                guard let statusCode = (response as? HTTPURLResponse)?.statusCode, statusCode >= 200 && statusCode <= 299 else {
-                    completion(false)
-                    return
-                }
-                
-                guard let data = data else {
-                    completion(false)
-                    return
-                }
-                
-                let parsedResult: [String: AnyObject]!
-                do {
-                    parsedResult = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String: AnyObject]
-                } catch {
-                    completion(false)
-                    return
-                }
-                
-                guard let stat = parsedResult[FlickrClient.ResponseKeys.Status] as? String, stat == FlickrClient.ResponseValues.OKStatus else {
-                    completion(false)
-                    return
-                }
-                
-                guard let photosDictionary = parsedResult[FlickrClient.ResponseKeys.Photos] as? [String: AnyObject] else {
-                    completion(false)
-                    return
-                }
-                
-                guard let photosArray = photosDictionary[FlickrClient.ResponseKeys.Photo] as? [[String: AnyObject]] else {
-                    completion(false)
-                    return
-                }
-                
-                if photosArray.count == 0 {
-                    completion(false)
-                    return
-                } else {
-                    for index in 0...(photosArray.count - 1) {
-                        let photoDictionary = photosArray[index] as [String: AnyObject]
-                        guard let imageUrlString = photoDictionary[FlickrClient.ResponseKeys.MediumURL] as? String else {
-                            return
-                        }
-                        let imageURL = URL(string: imageUrlString)
-                        if let imageData = try? Data(contentsOf: imageURL!) {
-                            self.photos.append(UIImage(data: imageData)!)
-                            print(self.photos.count)
-                        }
-                        completion(true)
-                    }
+                if let results = results {
+                    guard let status = results[FlickrClient.ResponseKeys.Status] as? String, status == FlickrClient.ResponseValues.OKStatus else { return }
+                    
+                    guard let photosDictionary = results[FlickrClient.ResponseKeys.Photos] as? [String: AnyObject] else { return }
+                    
+                    guard let pages = photosDictionary[FlickrClient.ResponseKeys.Pages] as? Int else { return }
+                    
+                    guard let photos = photosDictionary[FlickrClient.ResponseKeys.Photo] as? [[String: AnyObject]] else { return }
+                    
+                    completion(pages, photos)
                 }
             }
-            task.resume()
         }
     }
     
@@ -102,7 +54,7 @@ class FlickrClient {
         return false
     }
     
-    func boundingBoxString(latitude: String, longitude: String) -> String {
+    private func boundingBoxString(latitude: String, longitude: String) -> String {
         if let latitude = Double(latitude), let longitude = Double(longitude) {
             let minimumLon = max(longitude - FlickrClient.Constants.SearchBBoxHalfWidth, FlickrClient.Constants.SearchLonRange.0)
             let minimumLat = max(latitude - FlickrClient.Constants.SearchBBoxHalfHeight, FlickrClient.Constants.SearchLatRange.0)
@@ -112,19 +64,5 @@ class FlickrClient {
         } else {
             return "0,0,0,0"
         }
-    }
-    
-    func flickrURL(fromParameters parameters: [String: AnyObject]) -> URL {
-        var components = URLComponents()
-        components.scheme = FlickrClient.Constants.ApiScheme
-        components.host = FlickrClient.Constants.ApiHost
-        components.path = FlickrClient.Constants.ApiPath
-        components.queryItems = [URLQueryItem]()
-        
-        for (key, value) in parameters {
-            let queryItem = URLQueryItem(name: key, value: "\(value)")
-            components.queryItems!.append(queryItem)
-        }
-        return components.url!
     }
 }
