@@ -8,50 +8,66 @@
 
 import UIKit
 
+typealias Parameters = [String: String]
+
+enum Result {
+    case success(photos: [ParsedPhoto])
+    case failure
+}
+
+struct ParsedPhoto {
+    let photoID: String
+    let title: String
+    let remoteURL: String
+}
+
 class FlickrClient {
     
     static let shared = FlickrClient()
     
-    func getPhotos(latitude: String, longitude: String, page: Int, completion: @escaping (_ pages: Int?, _ photoDictionary: [[String: AnyObject]]?) -> Void) {
+    func getPhotos(latitude: String, longitude: String, page: Int, completion: @escaping (Result) -> Void) {
         if verifyCoordinate(latitudeString: latitude, longitudeString: longitude) {
-            
-            let urlParameters = [
-                FlickrClient.ParameterKeys.Method: FlickrClient.ParameterValues.SearchMethod,
-                FlickrClient.ParameterKeys.APIKey: FlickrClient.ParameterValues.APIKey,
-                FlickrClient.ParameterKeys.BoundingBox: boundingBoxString(latitude: latitude, longitude: longitude),
-                FlickrClient.ParameterKeys.SafeSearch: FlickrClient.ParameterValues.UseSafeSearch,
-                FlickrClient.ParameterKeys.Extras: FlickrClient.ParameterValues.MediumURL,
-                FlickrClient.ParameterKeys.Format: FlickrClient.ParameterValues.ResponseFormat,
-                FlickrClient.ParameterKeys.NoJSONCallback: FlickrClient.ParameterValues.DisableJSONCallback,
-                FlickrClient.ParameterKeys.PerPage: FlickrClient.ParameterValues.PerPage,
-                FlickrClient.ParameterKeys.Page: "\(page)"
-            ]
-            
-            NetworkManager.shared.GETRequest(urlParameters: urlParameters) { (results, error) in
-                guard error == nil else { return }
-                
-                if let results = results {
-                    guard let status = results[FlickrClient.ResponseKeys.Status] as? String, status == FlickrClient.ResponseValues.OKStatus else { return }
-                    
-                    guard let photosDictionary = results[FlickrClient.ResponseKeys.Photos] as? [String: AnyObject] else { return }
-                    
-                    guard let pages = photosDictionary[FlickrClient.ResponseKeys.Pages] as? Int else { return }
-                    
-                    guard let photos = photosDictionary[FlickrClient.ResponseKeys.Photo] as? [[String: AnyObject]] else { return }
-                    
-                    completion(pages, photos)
+            let urlParameters = flickrURLParameters(latitude: latitude, longitude: longitude, page: page)
+            NetworkManager.shared.GET(url: flickrURL(parameters: urlParameters)) { networkResponse in
+                switch networkResponse {
+                case .failure(error: let error):
+                    print(error)
+                    completion(.failure)
+                    return
+                case .success(response: let result):
+                    let parsedPhotos = self.process(result)
+                    if let parsedPhotos = parsedPhotos {
+                        completion(Result.success(photos: parsedPhotos))
+                    } else {
+                        completion(.failure)
+                    }
                 }
             }
         }
     }
     
-    func verifyCoordinate(latitudeString: String, longitudeString: String) -> Bool {
+    private func verifyCoordinate(latitudeString: String, longitudeString: String) -> Bool {
         if let latitude = Double(latitudeString), let longitude = Double(longitudeString) {
-            if latitude > FlickrClient.Constants.SearchLatRange.0 && latitude < FlickrClient.Constants.SearchLatRange.1 && longitude > FlickrClient.Constants.SearchLonRange.0 && longitude < FlickrClient.Constants.SearchLonRange.1 {
+            if latitude > Constants.SearchLatRange.0 && latitude < Constants.SearchLatRange.1 && longitude > Constants.SearchLonRange.0 && longitude < Constants.SearchLonRange.1 {
                 return true
             }
         }
         return false
+    }
+    
+    private func flickrURLParameters(latitude: String, longitude: String, page: Int) -> Parameters {
+        let urlParameters = [
+            ParameterKeys.Method: ParameterValues.SearchMethod,
+            ParameterKeys.APIKey: ParameterValues.APIKey,
+            ParameterKeys.BoundingBox: boundingBoxString(latitude: latitude, longitude: longitude),
+            ParameterKeys.SafeSearch: ParameterValues.UseSafeSearch,
+            ParameterKeys.Extras: ParameterValues.MediumURL,
+            ParameterKeys.Format: ParameterValues.ResponseFormat,
+            ParameterKeys.NoJSONCallback: ParameterValues.DisableJSONCallback,
+            ParameterKeys.PerPage: ParameterValues.PerPage,
+            ParameterKeys.Page: "\(page)"
+        ]
+        return urlParameters
     }
     
     private func boundingBoxString(latitude: String, longitude: String) -> String {
@@ -64,5 +80,46 @@ class FlickrClient {
         } else {
             return "0,0,0,0"
         }
+    }
+    
+    private func flickrURL(parameters: Parameters) -> URL {
+        var components = URLComponents()
+        components.scheme = Constants.ApiScheme
+        components.host = Constants.ApiHost
+        components.path = Constants.ApiPath
+        
+        var queryItems = [URLQueryItem]()
+        for (key, value) in parameters {
+            let queryItem = URLQueryItem(name: key, value: value)
+            queryItems.append(queryItem)
+        }
+        components.queryItems = queryItems
+        return components.url!
+    }
+    
+    private func process(_ result: JSONObject) -> [ParsedPhoto]? {
+        guard let status = result[ResponseKeys.Status] as? String, status == ResponseValues.OKStatus,
+            let photosDictionary = result[ResponseKeys.Photos] as? [String: AnyObject], let photoArray = photosDictionary[ResponseKeys.Photo] as? [[String: AnyObject]],
+            let pages = photosDictionary[ResponseKeys.Pages] as? Int else {
+                return nil
+        }
+        var parsedPhotos = [ParsedPhoto]()
+        for photoJSON in photoArray {
+            if let parsedPhoto = self.photo(fromJSON: photoJSON) {
+                parsedPhotos.append(parsedPhoto)
+            }
+        }
+        return parsedPhotos
+    }
+    
+    private func photo(fromJSON json: [String: AnyObject]) -> ParsedPhoto? {
+        guard let photoID = json[ResponseKeys.Id] as? String,
+            let title = json[ResponseKeys.Title] as? String,
+            let remoteURLString = json[ResponseKeys.MediumURL] as? String
+            // let remoteURL = URL(string: remoteURLString)
+            else {
+                return nil
+        }
+        return ParsedPhoto(photoID: photoID, title: title, remoteURL: remoteURLString)
     }
 }

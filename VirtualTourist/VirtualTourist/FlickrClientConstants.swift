@@ -50,7 +50,6 @@ extension FlickrClient {
         static let Id = "id"
         static let Title = "title"
         static let MediumURL = "url_m"
-        static let Total = "total"
     }
     
     struct ResponseValues {

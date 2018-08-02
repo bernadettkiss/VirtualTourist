@@ -51,7 +51,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
         let predicate = NSPredicate(format: "pin == %@", selectedPin)
         fetchRequest.predicate = predicate
-        let sortDescriptor = NSSortDescriptor(key: "id", ascending: false)
+        let sortDescriptor = NSSortDescriptor(key: "photoID", ascending: false)
         fetchRequest.sortDescriptors = [sortDescriptor]
         
         fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
@@ -75,7 +75,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         let photo = fetchedResultsController.object(at: indexPath)
         
         if photo.image == nil {
-            if let imageURL = URL(string: photo.url!) {
+            if let imageURL = URL(string: photo.remoteURL!) {
                 if let imageData = try? Data(contentsOf: imageURL) {
                     photo.image = imageData
                     try? dataController.viewContext.save()

@@ -137,23 +137,20 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
     
     func downloadPhotos(forPin pin: Pin) {
         guard let latitude = pin.latitude, let longitude = pin.longitude else { return }
-        FlickrClient.shared.getPhotos(latitude: latitude, longitude: longitude, page: 1) { (pages, photos) in
-            if let photos = photos {
-                for index in 0..<photos.count {
-                    let downloadedPhoto = photos[index] as [String: AnyObject]
-                    
-                    guard let id = downloadedPhoto[FlickrClient.ResponseKeys.Id] as? String else { return }
-                    guard let title = downloadedPhoto[FlickrClient.ResponseKeys.Title] as? String else { return }
-                    guard let imageURLString = downloadedPhoto[FlickrClient.ResponseKeys.MediumURL] as? String else { return }
-                    
+        FlickrClient.shared.getPhotos(latitude: latitude, longitude: longitude, page: 1) { result in
+            switch result {
+            case .failure:
+                return
+            case .success(let parsedPhotos):
+                for parsedPhoto in parsedPhotos {
                     let photo = Photo(context: self.dataController.viewContext)
-                    photo.id = id
-                    photo.title = title
-                    photo.url = imageURLString
                     photo.pin = pin
+                    photo.photoID = parsedPhoto.photoID
+                    photo.title = parsedPhoto.title
+                    photo.remoteURL = parsedPhoto.remoteURL
                 }
+                try? self.dataController.viewContext.save()
             }
-            try? self.dataController.viewContext.save()
         }
     }
     
