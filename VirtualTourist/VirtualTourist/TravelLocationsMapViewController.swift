@@ -35,14 +35,14 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
         mapView.delegate = self
         mapView.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:))))
         
-        if let pins = retrievePinsFromPersistentStore() {
-            createAnnotations(for: pins)
-        }
-        
         if (UIApplication.shared.delegate as! AppDelegate).appLaunchedBefore! {
             if let region = MapConfig.shared.load() {
                 mapView.setRegion(region, animated: true)
             }
+        }
+        
+        if let pins = dataController.fetchAllPins() {
+            createAnnotations(for: pins)
         }
     }
     
@@ -95,63 +95,15 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
         }
     }
     
-    func retrievePinsFromPersistentStore() -> [Pin]? {
-        let fetchRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
-        
-        if let result = try? dataController.viewContext.fetch(fetchRequest) {
-            return result
-        } else {
-            return nil
-        }
-    }
-    
-    func retrievePinFromPersistentStore(atCoordinate coordinate: CLLocationCoordinate2D) -> Pin? {
-        let latitude = String(coordinate.latitude)
-        let longitude = String(coordinate.longitude)
-        
-        let fetchRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
-        let latitudePredicate = NSPredicate(format: "latitude = %@", latitude)
-        let longitudePredicate = NSPredicate(format: "longitude = %@", longitude)
-        let subpredicates: [NSPredicate]
-        subpredicates = [latitudePredicate, longitudePredicate]
-        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: subpredicates)
-        fetchRequest.predicate = compoundPredicate
-        if let result = try? dataController.viewContext.fetch(fetchRequest) {
-            if !result.isEmpty {
-                return result[0]
-            }
-            return nil
-        } else {
-            return nil
-        }
-    }
-    
     func addPin(atCoordinate coordinate: CLLocationCoordinate2D) -> Pin {
         let pin = Pin(context: dataController.viewContext)
         pin.latitude = String(coordinate.latitude)
         pin.longitude = String(coordinate.longitude)
-        downloadPhotos(forPin: pin)
+        dataController.fetchPhotos(for: pin) { completion in
+            print("Photos OK")
+        }
         try? dataController.viewContext.save()
         return pin
-    }
-    
-    func downloadPhotos(forPin pin: Pin) {
-        guard let latitude = pin.latitude, let longitude = pin.longitude else { return }
-        FlickrClient.shared.getPhotos(latitude: latitude, longitude: longitude, page: 1) { result in
-            switch result {
-            case .failure:
-                return
-            case .success(let parsedPhotos):
-                for parsedPhoto in parsedPhotos {
-                    let photo = Photo(context: self.dataController.viewContext)
-                    photo.pin = pin
-                    photo.photoID = parsedPhoto.photoID
-                    photo.title = parsedPhoto.title
-                    photo.remoteURL = parsedPhoto.remoteURL
-                }
-                try? self.dataController.viewContext.save()
-            }
-        }
     }
     
     func remove(pin: Pin) {
@@ -192,7 +144,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         guard let annotation = view.annotation else { return }
         
-        if let selectedPin = retrievePinFromPersistentStore(atCoordinate: annotation.coordinate) {
+        if let selectedPin = dataController.fetchPin(atCoordinate: annotation.coordinate) {
             if isEditing {
                 remove(pin: selectedPin)
                 mapView.removeAnnotation(annotation)

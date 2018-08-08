@@ -13,15 +13,34 @@ class PhotoCollectionViewCell: UICollectionViewCell {
     @IBOutlet weak var imageView: UIImageView!
     @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        activityIndicator.isHidden = true
+    var loading = true {
+        didSet {
+            if loading {
+                activityIndicator.startAnimating()
+            } else {
+                activityIndicator.stopAnimating()
+            }
+        }
     }
     
-    func configureCell(forPhoto photo: Photo) {
-        if let image = UIImage(data: photo.image!) {
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        update(with: nil)
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        update(with: nil)
+    }
+    
+    func update(with image: UIImage?) {
+        if let image = image {
+            loading = false
             imageView.image = image
             imageView.contentMode = .scaleAspectFill
+        } else {
+            loading = true
+            imageView.image = nil
         }
     }
 }

@@ -1,19 +1,26 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14135" systemVersion="17F77" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14135" systemVersion="17G65" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="FlickrPage" representedClassName="FlickrPage" syncable="YES" codeGenerationType="class">
+        <attribute name="next" optional="YES" attributeType="Integer 16" minValueString="1" defaultValueString="1" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="total" optional="YES" attributeType="Integer 16" minValueString="1" defaultValueString="1" usesScalarValueType="YES" syncable="YES"/>
+        <relationship name="pin" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="flickrPage" inverseEntity="Pin" syncable="YES"/>
+    </entity>
     <entity name="Photo" representedClassName=".Photo" syncable="YES" codeGenerationType="class">
         <attribute name="image" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
         <attribute name="photoID" attributeType="String" syncable="YES"/>
-        <attribute name="remoteURL" attributeType="String" syncable="YES"/>
+        <attribute name="remoteURL" attributeType="Transformable" customClassName="NSURL" syncable="YES"/>
         <attribute name="title" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="pin" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="photos" inverseEntity="Pin" syncable="YES"/>
     </entity>
     <entity name="Pin" representedClassName=".Pin" syncable="YES" codeGenerationType="class">
         <attribute name="latitude" attributeType="String" syncable="YES"/>
         <attribute name="longitude" attributeType="String" syncable="YES"/>
+        <relationship name="flickrPage" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="FlickrPage" inverseName="pin" inverseEntity="FlickrPage" syncable="YES"/>
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="pin" inverseEntity="Photo" syncable="YES"/>
     </entity>
     <elements>
         <element name="Photo" positionX="873" positionY="323" width="128" height="120"/>
-        <element name="Pin" positionX="702" positionY="308" width="128" height="90"/>
+        <element name="Pin" positionX="702" positionY="308" width="128" height="105"/>
+        <element name="FlickrPage" positionX="792" positionY="360" width="128" height="90"/>
     </elements>
 </model>

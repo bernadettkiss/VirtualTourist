@@ -11,14 +11,14 @@ import UIKit
 typealias Parameters = [String: String]
 
 enum Result {
-    case success(photos: [ParsedPhoto])
+    case success(pages: Int, photos: [ParsedPhoto])
     case failure
 }
 
 struct ParsedPhoto {
     let photoID: String
     let title: String
-    let remoteURL: String
+    let remoteURL: URL
 }
 
 class FlickrClient {
@@ -35,9 +35,11 @@ class FlickrClient {
                     completion(.failure)
                     return
                 case .success(response: let result):
-                    let parsedPhotos = self.process(result)
-                    if let parsedPhotos = parsedPhotos {
-                        completion(Result.success(photos: parsedPhotos))
+                    let parsedResult = self.process(result)
+                    let pages = parsedResult.0
+                    let parsedPhotos = parsedResult.1
+                    if let pages = pages, let parsedPhotos = parsedPhotos {
+                        completion(Result.success(pages: pages, photos: parsedPhotos))
                     } else {
                         completion(.failure)
                     }
@@ -97,11 +99,11 @@ class FlickrClient {
         return components.url!
     }
     
-    private func process(_ result: JSONObject) -> [ParsedPhoto]? {
+    private func process(_ result: JSONObject) -> (Int?, [ParsedPhoto]?) {
         guard let status = result[ResponseKeys.Status] as? String, status == ResponseValues.OKStatus,
             let photosDictionary = result[ResponseKeys.Photos] as? [String: AnyObject], let photoArray = photosDictionary[ResponseKeys.Photo] as? [[String: AnyObject]],
             let pages = photosDictionary[ResponseKeys.Pages] as? Int else {
-                return nil
+                return (nil, nil)
         }
         var parsedPhotos = [ParsedPhoto]()
         for photoJSON in photoArray {
@@ -109,17 +111,16 @@ class FlickrClient {
                 parsedPhotos.append(parsedPhoto)
             }
         }
-        return parsedPhotos
+        return (pages, parsedPhotos)
     }
     
     private func photo(fromJSON json: [String: AnyObject]) -> ParsedPhoto? {
         guard let photoID = json[ResponseKeys.Id] as? String,
             let title = json[ResponseKeys.Title] as? String,
-            let remoteURLString = json[ResponseKeys.MediumURL] as? String
-            // let remoteURL = URL(string: remoteURLString)
-            else {
+            let remoteURLString = json[ResponseKeys.MediumURL] as? String,
+            let remoteURL = URL(string: remoteURLString) else {
                 return nil
         }
-        return ParsedPhoto(photoID: photoID, title: title, remoteURL: remoteURLString)
+        return ParsedPhoto(photoID: photoID, title: title, remoteURL: remoteURL)
     }
 }

@@ -18,3 +18,5 @@ enum MapConfigProperties: String {
     case latitudeDelta = "latitudeDelta"
     case longitudeDelta = "longitudeDelta"
 }
+
+let cellReuseIdentifier = "PhotoCell"
