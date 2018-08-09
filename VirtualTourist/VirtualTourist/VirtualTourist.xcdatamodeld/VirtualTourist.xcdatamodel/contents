@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="14135" systemVersion="17G65" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="FlickrPage" representedClassName="FlickrPage" syncable="YES" codeGenerationType="class">
-        <attribute name="next" optional="YES" attributeType="Integer 16" minValueString="1" defaultValueString="1" usesScalarValueType="YES" syncable="YES"/>
-        <attribute name="total" optional="YES" attributeType="Integer 16" minValueString="1" defaultValueString="1" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="next" optional="YES" attributeType="Integer 32" minValueString="1" defaultValueString="1" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="total" optional="YES" attributeType="Integer 32" minValueString="1" defaultValueString="1" usesScalarValueType="YES" syncable="YES"/>
         <relationship name="pin" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="flickrPage" inverseEntity="Pin" syncable="YES"/>
     </entity>
     <entity name="Photo" representedClassName=".Photo" syncable="YES" codeGenerationType="class">
@@ -19,8 +19,8 @@
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="pin" inverseEntity="Photo" syncable="YES"/>
     </entity>
     <elements>
+        <element name="FlickrPage" positionX="792" positionY="360" width="128" height="90"/>
         <element name="Photo" positionX="873" positionY="323" width="128" height="120"/>
         <element name="Pin" positionX="702" positionY="308" width="128" height="105"/>
-        <element name="FlickrPage" positionX="792" positionY="360" width="128" height="90"/>
     </elements>
 </model>

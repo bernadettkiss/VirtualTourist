@@ -39,7 +39,7 @@ extension FlickrClient {
         static let MediumURL = "url_m"
         static let ResponseFormat = "json"
         static let DisableJSONCallback = "1"
-        static let PerPage = "21"
+        static let PerPage = "15"
     }
     
     struct ResponseKeys {

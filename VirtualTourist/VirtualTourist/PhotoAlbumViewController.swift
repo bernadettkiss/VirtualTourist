@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, NSFetchedResultsControllerDelegate {
+class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
     
     @IBOutlet weak var photoCollectionView: UICollectionView!
     @IBOutlet weak var flowLayout: UICollectionViewFlowLayout!
@@ -18,6 +18,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     var selectedPin: Pin!
     var dataController: DataController!
     var fetchedResultsController: NSFetchedResultsController<Photo>!
+    var insertedIndexPaths: [IndexPath]!
+    var deletedIndexPaths: [IndexPath]!
     
     // MARK: - View Life Cycle
     
@@ -25,8 +27,15 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         super.viewDidLoad()
         photoCollectionView.dataSource = self
         photoCollectionView.delegate = self
+        navigationItem.rightBarButtonItem = editButtonItem
         configureFlowLayout()
         setUpFetchedResultsController()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        if let photos = selectedPin.photos, photos.anyObject() == nil {
+            dataController.fetchPhotos(for: selectedPin) { success in }
+        }
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -34,20 +43,24 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         fetchedResultsController = nil
     }
     
+    override func setEditing(_ editing: Bool, animated: Bool) {
+        super.setEditing(editing, animated: animated)
+        newCollectionButton.isEnabled = !editing
+    }
+    
     // MARK: - Actions
     
     @IBAction func newCollectionButtonPressed(_ sender: UIButton) {
         newCollectionButton.isEnabled = false
-        photoCollectionView.reloadData()
+        if let numberOfPhotos = fetchedResultsController.sections?[0].numberOfObjects {
+            for index in 0..<numberOfPhotos {
+                let cell = photoCollectionView.cellForItem(at: IndexPath(item: index, section: 0)) as! PhotoCollectionViewCell
+                cell.loading = true
+            }
+        }
         dataController.fetchPhotos(for: selectedPin) { success in
             DispatchQueue.main.async {
                 self.newCollectionButton.isEnabled = true
-            }
-            if success {
-                try? self.fetchedResultsController.performFetch()
-                DispatchQueue.main.async {
-                    self.photoCollectionView.reloadData()
-                }
             }
         }
     }
@@ -86,13 +99,16 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     // MARK: - CollectionViewDataSource Methods
     
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return fetchedResultsController.sections?.count ?? 0
+    }
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return fetchedResultsController.sections?[0].numberOfObjects ?? 21
+        return fetchedResultsController.sections?[0].numberOfObjects ?? 0
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellReuseIdentifier, for: indexPath) as! PhotoCollectionViewCell
-        cell.update(with: nil)
         let photo = fetchedResultsController.object(at: indexPath)
         
         if photo.image == nil {
@@ -111,5 +127,44 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
             cell.update(with: image)
         }
         return cell
+    }
+    
+    // MARK: - CollectionViewDelegate Methods
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if isEditing {
+            let photoToDelete = fetchedResultsController.object(at: indexPath)
+            dataController.viewContext.delete(photoToDelete)
+            try? dataController.viewContext.save()
+        }
+    }
+}
+
+extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        insertedIndexPaths = []
+        deletedIndexPaths = []
+    }
+    
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        photoCollectionView.performBatchUpdates({
+            for insertedIndexPath in self.insertedIndexPaths {
+                self.photoCollectionView.insertItems(at: [insertedIndexPath])
+            }
+            for deletedIndexPath in self.deletedIndexPaths {
+                self.photoCollectionView.deleteItems(at: [deletedIndexPath])
+            }
+        }, completion: nil)
+    }
+    
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        switch type {
+        case .insert:
+            insertedIndexPaths.append(newIndexPath!)
+        case .delete:
+            deletedIndexPaths.append(indexPath!)
+        default:
+            ()
+        }
     }
 }

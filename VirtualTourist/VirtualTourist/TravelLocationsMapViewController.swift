@@ -99,9 +99,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
         let pin = Pin(context: dataController.viewContext)
         pin.latitude = String(coordinate.latitude)
         pin.longitude = String(coordinate.longitude)
-        dataController.fetchPhotos(for: pin) { completion in
-            print("Photos OK")
-        }
+        dataController.fetchPhotos(for: pin) { completion in }
         try? dataController.viewContext.save()
         return pin
     }

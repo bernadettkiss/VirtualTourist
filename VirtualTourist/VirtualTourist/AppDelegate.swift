@@ -34,19 +34,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         return true
     }
-    
-    func applicationWillResignActive(_ application: UIApplication) {
-    }
-    
+
     func applicationDidEnterBackground(_ application: UIApplication) {
         saveViewContext()
         MapConfig.shared.save()
-    }
-    
-    func applicationWillEnterForeground(_ application: UIApplication) {
-    }
-    
-    func applicationDidBecomeActive(_ application: UIApplication) {
     }
     
     func applicationWillTerminate(_ application: UIApplication) {
@@ -57,6 +48,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // MARK: - Core Data Saving Support
     
     func saveViewContext() {
-        try? dataController.viewContext.save()
+        if dataController.viewContext.hasChanges {
+            try? dataController.viewContext.save()
+        }
     }
 }

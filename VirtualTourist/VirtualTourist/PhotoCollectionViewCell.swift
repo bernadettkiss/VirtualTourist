@@ -17,20 +17,11 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         didSet {
             if loading {
                 activityIndicator.startAnimating()
+                imageView.image = nil
             } else {
                 activityIndicator.stopAnimating()
             }
         }
-    }
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        update(with: nil)
-    }
-    
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        update(with: nil)
     }
     
     func update(with image: UIImage?) {
@@ -38,9 +29,6 @@ class PhotoCollectionViewCell: UICollectionViewCell {
             loading = false
             imageView.image = image
             imageView.contentMode = .scaleAspectFill
-        } else {
-            loading = true
-            imageView.image = nil
         }
     }
 }

@@ -62,16 +62,14 @@ class DataController {
     }
     
     func fetchPhotos(for pin: Pin, completion: @escaping (_ success: Bool) -> Void) {
-        deletePhotos(of: pin)
         guard let latitude = pin.latitude, let longitude = pin.longitude else { return }
         if pin.flickrPage == nil {
             FlickrClient.shared.getPhotos(latitude: latitude, longitude: longitude, page: 1) { result in
-                print("Downloading the first set")
                 if case let .success(pages, parsedPhotos) = result {
                     self.viewContext.perform {
                         let flickrPage = FlickrPage(context: self.viewContext)
                         flickrPage.pin = pin
-                        flickrPage.total = Int16(pages)
+                        flickrPage.total = Int32(pages)
                         flickrPage.next = 2
                         self.photos(from: parsedPhotos, pin: pin)
                         try? self.viewContext.save()
@@ -81,7 +79,6 @@ class DataController {
             }
         }
         if let nextPage = pin.flickrPage?.next, let totalPages = pin.flickrPage?.total {
-            print("NextPage: \(nextPage)")
             if nextPage <= totalPages {
                 FlickrClient.shared.getPhotos(latitude: latitude, longitude: longitude, page: Int(nextPage)) { result in
                     if case let .success(_, parsedPhotos) = result {
@@ -111,6 +108,7 @@ class DataController {
     }
     
     private func photos(from parsedPhotos: [ParsedPhoto], pin: Pin) {
+        deletePhotos(of: pin)
         for parsedPhoto in parsedPhotos {
             let photo = Photo(context: self.viewContext)
             photo.pin = pin
