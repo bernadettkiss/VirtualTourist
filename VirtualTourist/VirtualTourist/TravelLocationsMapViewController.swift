@@ -11,9 +11,9 @@ import MapKit
 import CoreLocation
 import CoreData
 
-class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate {
+class TravelLocationsMapViewController: UIViewController, CLLocationManagerDelegate, MKMapViewDelegate {
     
-    @IBOutlet weak var centerBarButton: UIBarButtonItem!
+    @IBOutlet weak var centerMapBarButton: UIBarButtonItem!
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var instructionView: UIView!
     @IBOutlet weak var instructionLabel: UILabel!
@@ -21,13 +21,12 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
     var locationManager = CLLocationManager()
     var dataController: DataController!
     var selectedPin: Pin?
+    let segueIdentifier = "toPhotoAlbum"
     
     // MARK: - View Life Cycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        print((UIApplication.shared.delegate as! AppDelegate).appLaunchedBefore!)
         
         configureNavigationBar()
         
@@ -35,39 +34,13 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
         mapView.delegate = self
         mapView.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:))))
         
-        if (UIApplication.shared.delegate as! AppDelegate).appLaunchedBefore! {
-            if let region = MapConfig.shared.load() {
-                mapView.setRegion(region, animated: true)
-            }
-        }
-        
         if let pins = dataController.fetchAllPins() {
             createAnnotations(for: pins)
         }
-    }
-    
-    // MARK: - Actions
-    
-    @IBAction func centerMapPressed(_ sender: UIBarButtonItem) {
-        guard let centerCoordinate = locationManager.location?.coordinate else { return }
-        let latitudinalMeters = 10000.0
-        let longitudinalMeters = 10000.0
-        let coordinateRegion = MKCoordinateRegionMakeWithDistance(centerCoordinate, latitudinalMeters, longitudinalMeters)
-        mapView.setRegion(coordinateRegion, animated: true)
-    }
-    
-    // MARK: - Methods
-    
-    func configureNavigationBar() {
-        navigationItem.rightBarButtonItem = editButtonItem
-        if CLLocationManager.locationServicesEnabled() {
-            switch CLLocationManager.authorizationStatus() {
-            case .denied, .restricted:
-                centerBarButton.isEnabled = false
-            case .notDetermined:
-                locationManager.requestWhenInUseAuthorization()
-            default:
-                return
+        
+        if (UIApplication.shared.delegate as! AppDelegate).appLaunchedBefore! {
+            if let region = MapRegion.shared.load() {
+                mapView.setRegion(region, animated: true)
             }
         }
     }
@@ -84,6 +57,36 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
         }
     }
     
+    // MARK: - Actions
+    
+    @IBAction func centerMapPressed(_ sender: UIBarButtonItem) {
+        guard let centerCoordinate = locationManager.location?.coordinate else { return }
+        let latitudinalMeters = 10000.0
+        let longitudinalMeters = 10000.0
+        let coordinateRegion = MKCoordinateRegionMakeWithDistance(centerCoordinate, latitudinalMeters, longitudinalMeters)
+        mapView.setRegion(coordinateRegion, animated: true)
+    }
+    
+    // MARK: - Methods
+    
+    private func configureNavigationBar() {
+        navigationItem.rightBarButtonItem = editButtonItem
+        updateCenterMapBarButton()
+    }
+    
+    private func updateCenterMapBarButton() {
+        if CLLocationManager.locationServicesEnabled() {
+            switch CLLocationManager.authorizationStatus() {
+            case .denied, .restricted:
+                centerMapBarButton.isEnabled = false
+            case .notDetermined:
+                locationManager.requestWhenInUseAuthorization()
+            default:
+                return
+            }
+        }
+    }
+    
     @objc func handleLongPress(_ sender: UILongPressGestureRecognizer) {
         guard !isEditing else { return }
         
@@ -95,7 +98,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
         }
     }
     
-    func addPin(atCoordinate coordinate: CLLocationCoordinate2D) -> Pin {
+    private func addPin(atCoordinate coordinate: CLLocationCoordinate2D) -> Pin {
         let pin = Pin(context: dataController.viewContext)
         pin.latitude = String(coordinate.latitude)
         pin.longitude = String(coordinate.longitude)
@@ -104,19 +107,19 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
         return pin
     }
     
-    func remove(pin: Pin) {
+    private func remove(pin: Pin) {
         dataController.viewContext.delete(pin)
         try? dataController.viewContext.save()
     }
     
-    func createAnnotations(for pins: [Pin]) {
+    private func createAnnotations(for pins: [Pin]) {
         for pin in pins {
             createAnnotation(for: pin)
         }
         mapView.showAnnotations(mapView.annotations, animated: true)
     }
     
-    func createAnnotation(for pin: Pin) {
+    private func createAnnotation(for pin: Pin) {
         let latitude = CLLocationDegrees(pin.latitude!)
         let longitude = CLLocationDegrees(pin.longitude!)
         let coordinate = CLLocationCoordinate2D(latitude: latitude!, longitude: longitude!)
@@ -126,17 +129,23 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == SegueIdentifier.toPhotoAlbum.rawValue {
+        if segue.identifier == segueIdentifier {
             guard let photoAlbumViewController = segue.destination as? PhotoAlbumViewController else { return }
             photoAlbumViewController.selectedPin = selectedPin!
             photoAlbumViewController.dataController = dataController
         }
     }
     
+    // MARK: - CLLocationManagerDelegate Methods
+    
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        updateCenterMapBarButton()
+    }
+    
     // MARK: - MKMapViewDelegate Methods
     
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-        MapConfig.shared.update(centerCoordinate: mapView.region.center, span: mapView.region.span)
+        MapRegion.shared.update(centerCoordinate: mapView.region.center, span: mapView.region.span)
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
@@ -148,7 +157,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, CLL
                 mapView.removeAnnotation(annotation)
             } else {
                 self.selectedPin = selectedPin
-                performSegue(withIdentifier: SegueIdentifier.toPhotoAlbum.rawValue, sender: nil)
+                performSegue(withIdentifier: segueIdentifier, sender: nil)
             }
         }
     }

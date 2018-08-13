@@ -7,17 +7,21 @@
 //
 
 import UIKit
+import MapKit
 import CoreData
 
 class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
     
+    @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var photoCollectionView: UICollectionView!
     @IBOutlet weak var flowLayout: UICollectionViewFlowLayout!
     @IBOutlet weak var newCollectionButton: UIButton!
+    @IBOutlet weak var noPhotosLabel: UILabel!
     
     var selectedPin: Pin!
     var dataController: DataController!
     var fetchedResultsController: NSFetchedResultsController<Photo>!
+    let cellReuseIdentifier = "PhotoCell"
     var insertedIndexPaths: [IndexPath]!
     var deletedIndexPaths: [IndexPath]!
     
@@ -28,13 +32,17 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         photoCollectionView.dataSource = self
         photoCollectionView.delegate = self
         navigationItem.rightBarButtonItem = editButtonItem
+        showOnMap(selectedPin)
+        configureView()
         configureFlowLayout()
         setUpFetchedResultsController()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         if let photos = selectedPin.photos, photos.anyObject() == nil {
-            dataController.fetchPhotos(for: selectedPin) { success in }
+            dataController.fetchPhotos(for: selectedPin) { success in
+                self.configureView()
+            }
         }
     }
     
@@ -54,8 +62,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         newCollectionButton.isEnabled = false
         if let numberOfPhotos = fetchedResultsController.sections?[0].numberOfObjects {
             for index in 0..<numberOfPhotos {
-                let cell = photoCollectionView.cellForItem(at: IndexPath(item: index, section: 0)) as! PhotoCollectionViewCell
-                cell.loading = true
+                let cell = photoCollectionView.cellForItem(at: IndexPath(item: index, section: 0)) as? PhotoCollectionViewCell
+                cell?.loading = true
             }
         }
         dataController.fetchPhotos(for: selectedPin) { success in
@@ -67,7 +75,26 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     // MARK: - Methods
     
-    func configureFlowLayout() {
+    private func configureView() {
+        if self.selectedPin.flickrPage?.total == 0 {
+            DispatchQueue.main.async {
+                self.editButtonItem.isEnabled = false
+                self.newCollectionButton.isHidden = true
+                self.noPhotosLabel.isHidden = false
+            }
+        }
+    }
+    
+    private func showOnMap(_ pin: Pin) {
+        let annotation = MKPointAnnotation()
+        let coordinate = CLLocationCoordinate2D(latitude: CLLocationDegrees(pin.latitude!)!, longitude: CLLocationDegrees(pin.longitude!)!)
+        annotation.coordinate = coordinate
+        mapView.addAnnotation(annotation)
+        mapView.setRegion(MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)), animated: true)
+        mapView.isUserInteractionEnabled = false
+    }
+    
+    private func configureFlowLayout() {
         let space: CGFloat = 3.0
         var numberOfColumns: CGFloat = 3
         if view.frame.size.width > view.frame.size.height {
@@ -80,14 +107,14 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         flowLayout.itemSize = CGSize(width: dimension, height: dimension)
     }
     
-    func setUpFetchedResultsController() {
+    private func setUpFetchedResultsController() {
         let fetchRequest: NSFetchRequest<Photo> = Photo.fetchRequest()
         let predicate = NSPredicate(format: "pin == %@", selectedPin)
         fetchRequest.predicate = predicate
         let sortDescriptor = NSSortDescriptor(key: "photoID", ascending: false)
         fetchRequest.sortDescriptors = [sortDescriptor]
         
-        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
+        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "Photos")
         fetchedResultsController.delegate = self
         
         do {

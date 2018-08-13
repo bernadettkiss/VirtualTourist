@@ -1,5 +1,5 @@
 //
-//  MapConfig.swift
+//  MapRegion.swift
 //  VirtualTourist
 //
 //  Created by Bernadett Kiss on 7/27/18.
@@ -9,9 +9,16 @@
 import Foundation
 import MapKit
 
-class MapConfig {
+enum MapRegionProperties: String {
+    case centerCoordinateLatitude = "centerCoordinateLatitude"
+    case centerCoordinateLongitude = "centerCoordinateLongitude"
+    case latitudeDelta = "latitudeDelta"
+    case longitudeDelta = "longitudeDelta"
+}
+
+class MapRegion {
     
-    static let shared = MapConfig()
+    static let shared = MapRegion()
     
     var centerCoordinateLatitude: String?
     var centerCoordinateLongitude: String?
@@ -26,17 +33,17 @@ class MapConfig {
     }
     
     func save() {
-        UserDefaults.standard.set(centerCoordinateLatitude, forKey: MapConfigProperties.centerCoordinateLatitude.rawValue)
-        UserDefaults.standard.set(centerCoordinateLongitude, forKey: MapConfigProperties.centerCoordinateLongitude.rawValue)
-        UserDefaults.standard.set(latitudeDelta, forKey: MapConfigProperties.latitudeDelta.rawValue)
-        UserDefaults.standard.set(longitudeDelta, forKey: MapConfigProperties.longitudeDelta.rawValue)
+        UserDefaults.standard.set(centerCoordinateLatitude, forKey: MapRegionProperties.centerCoordinateLatitude.rawValue)
+        UserDefaults.standard.set(centerCoordinateLongitude, forKey: MapRegionProperties.centerCoordinateLongitude.rawValue)
+        UserDefaults.standard.set(latitudeDelta, forKey: MapRegionProperties.latitudeDelta.rawValue)
+        UserDefaults.standard.set(longitudeDelta, forKey: MapRegionProperties.longitudeDelta.rawValue)
     }
     
     func load() -> MKCoordinateRegion? {
-        if let latitudeString = UserDefaults.standard.string(forKey: MapConfigProperties.centerCoordinateLatitude.rawValue),
-            let longitudeString = UserDefaults.standard.string(forKey: MapConfigProperties.centerCoordinateLongitude.rawValue),
-            let latitudeDeltaString = UserDefaults.standard.string(forKey: MapConfigProperties.latitudeDelta.rawValue),
-            let longitudeDeltaString = UserDefaults.standard.string(forKey: MapConfigProperties.longitudeDelta.rawValue) {
+        if let latitudeString = UserDefaults.standard.string(forKey: MapRegionProperties.centerCoordinateLatitude.rawValue),
+            let longitudeString = UserDefaults.standard.string(forKey: MapRegionProperties.centerCoordinateLongitude.rawValue),
+            let latitudeDeltaString = UserDefaults.standard.string(forKey: MapRegionProperties.latitudeDelta.rawValue),
+            let longitudeDeltaString = UserDefaults.standard.string(forKey: MapRegionProperties.longitudeDelta.rawValue) {
             
             var centerCoordinate = CLLocationCoordinate2D()
             centerCoordinate.latitude = CLLocationDegrees(latitudeString)!

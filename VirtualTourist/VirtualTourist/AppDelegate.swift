@@ -12,13 +12,10 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
     
     var window: UIWindow?
-    
+    let dataController = DataController(modelName: "VirtualTourist")
     public var appLaunchedBefore: Bool?
     
-    let dataController = DataController(modelName: "VirtualTourist")
-    
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
-        
         if UserDefaults.standard.bool(forKey: "appLaunchedBefore") {
             appLaunchedBefore = true
         } else {
@@ -34,15 +31,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         return true
     }
-
+    
     func applicationDidEnterBackground(_ application: UIApplication) {
         saveViewContext()
-        MapConfig.shared.save()
+        MapRegion.shared.save()
     }
     
     func applicationWillTerminate(_ application: UIApplication) {
         saveViewContext()
-        MapConfig.shared.save()
+        MapRegion.shared.save()
     }
     
     // MARK: - Core Data Saving Support
