@@ -41,16 +41,12 @@ class DataController {
     }
     
     func fetchPin(atCoordinate coordinate: CLLocationCoordinate2D) -> Pin? {
-        let latitude = String(coordinate.latitude)
-        let longitude = String(coordinate.longitude)
+        let latitude = coordinate.latitude
+        let longitude = coordinate.longitude
         
         let fetchRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
-        let latitudePredicate = NSPredicate(format: "latitude = %@", latitude)
-        let longitudePredicate = NSPredicate(format: "longitude = %@", longitude)
-        let subpredicates: [NSPredicate]
-        subpredicates = [latitudePredicate, longitudePredicate]
-        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: subpredicates)
-        fetchRequest.predicate = compoundPredicate
+        let predicate = NSPredicate(format: "latitude == %@ AND longitude == %@", argumentArray: [latitude, longitude])
+        fetchRequest.predicate = predicate
         if let result = try? viewContext.fetch(fetchRequest) {
             if !result.isEmpty {
                 return result.first
@@ -62,9 +58,8 @@ class DataController {
     }
     
     func fetchPhotos(for pin: Pin, completion: @escaping (_ success: Bool) -> Void) {
-        guard let latitude = pin.latitude, let longitude = pin.longitude else { return }
         if pin.flickrPage == nil {
-            FlickrClient.shared.getPhotos(latitude: latitude, longitude: longitude, page: 1) { result in
+            FlickrClient.shared.getPhotos(latitude: pin.latitude, longitude: pin.longitude, page: 1) { result in
                 if case let .success(pages, parsedPhotos) = result {
                     self.viewContext.perform {
                         let flickrPage = FlickrPage(context: self.viewContext)
@@ -80,7 +75,7 @@ class DataController {
         }
         if let nextPage = pin.flickrPage?.next, let totalPages = pin.flickrPage?.total {
             if nextPage <= totalPages {
-                FlickrClient.shared.getPhotos(latitude: latitude, longitude: longitude, page: Int(nextPage)) { result in
+                FlickrClient.shared.getPhotos(latitude: pin.latitude, longitude: pin.longitude, page: Int(nextPage)) { result in
                     if case let .success(_, parsedPhotos) = result {
                         self.viewContext.perform {
                             pin.flickrPage?.next = (nextPage < totalPages) ? nextPage + 1 : 1

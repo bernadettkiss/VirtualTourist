@@ -11,7 +11,7 @@ import Foundation
 typealias JSONObject = [String: AnyObject]
 
 enum NetworkResponse {
-    case success(response: JSONObject)
+    case success(response: Any)
     case failure(error: NSError)
 }
 
@@ -49,6 +49,25 @@ class NetworkManager {
             } catch {
                 completionHandler(NetworkResponse.failure(error: error as NSError))
             }
+        }
+        task.resume()
+    }
+    
+    func downloadImage(imageURL: URL, completionHandler: @escaping (_ networkResponse: NetworkResponse) -> Void) {
+        let request = URLRequest(url: imageURL)
+        let task = session.dataTask(with: request) { (data, response, error) in
+            guard error == nil else {
+                let error = NetworkResponse.failure(error: error! as NSError)
+                completionHandler(error)
+                return
+            }
+            
+            guard let imageData = data else {
+                let error = NetworkResponse.failure(error: NSError(domain: "downloadImage", code: 1, userInfo: [NSLocalizedDescriptionKey: "No data was returned by the request"]))
+                completionHandler(error)
+                return
+            }
+            completionHandler(NetworkResponse.success(response: imageData))
         }
         task.resume()
     }

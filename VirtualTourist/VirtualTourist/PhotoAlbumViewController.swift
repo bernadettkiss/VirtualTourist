@@ -87,7 +87,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     private func showOnMap(_ pin: Pin) {
         let annotation = MKPointAnnotation()
-        let coordinate = CLLocationCoordinate2D(latitude: CLLocationDegrees(pin.latitude!)!, longitude: CLLocationDegrees(pin.longitude!)!)
+        let coordinate = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
         annotation.coordinate = coordinate
         mapView.addAnnotation(annotation)
         mapView.setRegion(MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)), animated: true)
@@ -114,7 +114,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         let sortDescriptor = NSSortDescriptor(key: "photoID", ascending: false)
         fetchRequest.sortDescriptors = [sortDescriptor]
         
-        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: "Photos")
+        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
         fetchedResultsController.delegate = self
         
         do {
@@ -140,12 +140,14 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
         
         if photo.image == nil {
             if let imageURL = photo.remoteURL {
-                if let imageData = try? Data(contentsOf: imageURL as URL) {
-                    photo.image = imageData
-                    try? dataController.viewContext.save()
-                    let image = UIImage(data: imageData)
-                    DispatchQueue.main.async {
-                        cell.update(with: image)
+                NetworkManager.shared.downloadImage(imageURL: imageURL as URL) { result in
+                    if case let .success(imageData) = result {
+                        photo.image = imageData as? Data
+                        try? self.dataController.viewContext.save()
+                        let image = UIImage(data: imageData as! Data)
+                        DispatchQueue.main.async {
+                            cell.update(with: image)
+                        }
                     }
                 }
             }

@@ -25,17 +25,17 @@ class FlickrClient {
     
     static let shared = FlickrClient()
     
-    func getPhotos(latitude: String, longitude: String, page: Int, completion: @escaping (Result) -> Void) {
-        if verifyCoordinate(latitudeString: latitude, longitudeString: longitude) {
+    func getPhotos(latitude: Double, longitude: Double, page: Int, completion: @escaping (Result) -> Void) {
+        if verifyCoordinate(latitude: latitude, longitude: longitude) {
             let urlParameters = flickrURLParameters(latitude: latitude, longitude: longitude, page: page)
             NetworkManager.shared.GET(url: flickrURL(parameters: urlParameters)) { networkResponse in
                 switch networkResponse {
                 case .failure(error: let error):
-                    print(error)
+                    debugPrint(error)
                     completion(.failure)
                     return
                 case .success(response: let result):
-                    let parsedResult = self.process(result)
+                    let parsedResult = self.process(result as! JSONObject)
                     let pages = parsedResult.0
                     let parsedPhotos = parsedResult.1
                     if let pages = pages, let parsedPhotos = parsedPhotos {
@@ -48,16 +48,15 @@ class FlickrClient {
         }
     }
     
-    private func verifyCoordinate(latitudeString: String, longitudeString: String) -> Bool {
-        if let latitude = Double(latitudeString), let longitude = Double(longitudeString) {
-            if latitude > Constants.SearchLatRange.0 && latitude < Constants.SearchLatRange.1 && longitude > Constants.SearchLonRange.0 && longitude < Constants.SearchLonRange.1 {
-                return true
-            }
+    private func verifyCoordinate(latitude: Double, longitude: Double) -> Bool {
+        if latitude > Constants.SearchLatRange.0 && latitude < Constants.SearchLatRange.1 && longitude > Constants.SearchLonRange.0 && longitude < Constants.SearchLonRange.1 {
+            return true
+        } else {
+            return false
         }
-        return false
     }
     
-    private func flickrURLParameters(latitude: String, longitude: String, page: Int) -> Parameters {
+    private func flickrURLParameters(latitude: Double, longitude: Double, page: Int) -> Parameters {
         let urlParameters = [
             ParameterKeys.Method: ParameterValues.SearchMethod,
             ParameterKeys.APIKey: ParameterValues.APIKey,
@@ -72,16 +71,12 @@ class FlickrClient {
         return urlParameters
     }
     
-    private func boundingBoxString(latitude: String, longitude: String) -> String {
-        if let latitude = Double(latitude), let longitude = Double(longitude) {
-            let minimumLon = max(longitude - FlickrClient.Constants.SearchBBoxHalfWidth, FlickrClient.Constants.SearchLonRange.0)
-            let minimumLat = max(latitude - FlickrClient.Constants.SearchBBoxHalfHeight, FlickrClient.Constants.SearchLatRange.0)
-            let maximumLon = min(longitude + FlickrClient.Constants.SearchBBoxHalfWidth, FlickrClient.Constants.SearchLonRange.1)
-            let maximumLat = min(latitude + FlickrClient.Constants.SearchBBoxHalfHeight, FlickrClient.Constants.SearchLatRange.1)
-            return "\(minimumLon),\(minimumLat),\(maximumLon),\(maximumLat)"
-        } else {
-            return "0,0,0,0"
-        }
+    private func boundingBoxString(latitude: Double, longitude: Double) -> String {
+        let minimumLon = max(longitude - FlickrClient.Constants.SearchBBoxHalfWidth, FlickrClient.Constants.SearchLonRange.0)
+        let minimumLat = max(latitude - FlickrClient.Constants.SearchBBoxHalfHeight, FlickrClient.Constants.SearchLatRange.0)
+        let maximumLon = min(longitude + FlickrClient.Constants.SearchBBoxHalfWidth, FlickrClient.Constants.SearchLonRange.1)
+        let maximumLat = min(latitude + FlickrClient.Constants.SearchBBoxHalfHeight, FlickrClient.Constants.SearchLatRange.1)
+        return "\(minimumLon),\(minimumLat),\(maximumLon),\(maximumLat)"
     }
     
     private func flickrURL(parameters: Parameters) -> URL {

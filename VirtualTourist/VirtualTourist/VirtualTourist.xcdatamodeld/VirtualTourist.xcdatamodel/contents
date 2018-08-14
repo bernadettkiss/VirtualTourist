@@ -13,8 +13,8 @@
         <relationship name="pin" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Pin" inverseName="photos" inverseEntity="Pin" syncable="YES"/>
     </entity>
     <entity name="Pin" representedClassName=".Pin" syncable="YES" codeGenerationType="class">
-        <attribute name="latitude" attributeType="String" syncable="YES"/>
-        <attribute name="longitude" attributeType="String" syncable="YES"/>
+        <attribute name="latitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
+        <attribute name="longitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
         <relationship name="flickrPage" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="FlickrPage" inverseName="pin" inverseEntity="FlickrPage" syncable="YES"/>
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Photo" inverseName="pin" inverseEntity="Photo" syncable="YES"/>
     </entity>

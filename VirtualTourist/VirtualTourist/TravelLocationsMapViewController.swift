@@ -100,8 +100,8 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     
     private func addPin(atCoordinate coordinate: CLLocationCoordinate2D) -> Pin {
         let pin = Pin(context: dataController.viewContext)
-        pin.latitude = String(coordinate.latitude)
-        pin.longitude = String(coordinate.longitude)
+        pin.latitude = coordinate.latitude
+        pin.longitude = coordinate.longitude
         dataController.fetchPhotos(for: pin) { completion in }
         try? dataController.viewContext.save()
         return pin
@@ -120,9 +120,7 @@ class TravelLocationsMapViewController: UIViewController, CLLocationManagerDeleg
     }
     
     private func createAnnotation(for pin: Pin) {
-        let latitude = CLLocationDegrees(pin.latitude!)
-        let longitude = CLLocationDegrees(pin.longitude!)
-        let coordinate = CLLocationCoordinate2D(latitude: latitude!, longitude: longitude!)
+        let coordinate = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
         let annotation = MKPointAnnotation()
         annotation.coordinate = coordinate
         mapView.addAnnotation(annotation)
